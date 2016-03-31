@@ -1,0 +1,13 @@
+*~
+master/gitpoller*
+master/*_BUILD_
+master/*_TEST_
+master/http.*
+master/config.py
+master/runtests
+master/state.sqlite
+master/twistd.log*
+master/twistd.pid
+master/password.py
+master/password.pyc
+master/public_html/*.rpm

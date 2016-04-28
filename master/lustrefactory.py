@@ -21,6 +21,9 @@ def do_step_build(step, name):
 def do_step_zfs(step):
     return do_step_build(step, 'buildzfs')
 
+def do_step_installdeps(step):
+    return do_step_build(step, 'installdeps')
+
 @util.renderer
 def dependencyCommand(props):
     args = ["runurl"]
@@ -83,6 +86,8 @@ def getBuildFactory(gerrit_repo, **kwargs):
         command=dependencyCommand,
         decodeRC={0 : SUCCESS, 1 : FAILURE, 2 : WARNINGS, 3 : SKIPPED },
         haltOnFailure=True, logEnviron=False,
+        doStepIf=do_step_installdeps,
+        hideStepIf=lambda results, s: results==SKIPPED,
         description=["installing dependencies"],
         descriptionDone=["installed dependencies"]))
 

@@ -21,7 +21,7 @@ Amazon*)
 
     # Required utilties.
     sudo yum -y install git rpm-build wget curl lsscsi parted attr dbench \
-        watchdog createrepo python python-pip python-docutils
+        watchdog createrepo python python-pip python-docutils xfig transfig
     ;;
 
 CentOS*)
@@ -44,7 +44,7 @@ CentOS*)
 
     # Required utilties.
     sudo yum -y install git rpm-build wget curl lsscsi parted attr dbench bc \
-        watchdog createrepo mock python python-docutils mdadm
+        watchdog createrepo mock python python-docutils mdadm xfig transfig
 
     # add user to the mock group
     sudo usermod -a -G mock buildbot
@@ -67,7 +67,7 @@ Debian*)
     # Required utilties.
     sudo apt-get --yes install git alien fakeroot wget curl bc \
         lsscsi parted gdebi attr dbench watchdog createrepo \
-        python python-pip python-docutils
+        python python-pip python-docutils xfig transfig
     ;;
 
 Fedora*)
@@ -84,7 +84,7 @@ Fedora*)
 
     # Required utilties.
     sudo dnf -y install git rpm-build wget curl lsscsi parted attr dbench \
-        watchdog createrepo mock python python-pip python-docutils
+        watchdog createrepo mock python python-pip python-docutils xfig transfig
 
     # add user to the mock group
     sudo usermod -a -G mock buildbot
@@ -115,7 +115,7 @@ RHEL*)
     # Required utilties.
     sudo yum -y $EXTRA_REPO install git rpm-build wget curl lsscsi \
         parted attr dbench bc watchdog createrepo mock python \
-        python-pip python-docutils mdadm
+        python-pip python-docutils mdadm xfig transfig
 
     # add user to the mock group
     sudo usermod -a -G mock buildbot
@@ -130,7 +130,7 @@ SUSE*)
 
     # Required utilties.
     sudo zypper --non-interactive install git rpm-build wget curl \
-        lsscsi parted attr createrepo python python-pip python-docutils
+        lsscsi parted attr createrepo python python-pip python-docutils xfig transfig
 
     # Required development packages.
     sudo zypper --non-interactive --plus-content debug install \
@@ -148,7 +148,7 @@ OpenSUSE*)
 
     # Required utilties.
     sudo zypper --non-interactive install git rpm-build wget curl \
-        lsscsi parted attr createrepo python python-pip python-docutils
+        lsscsi parted attr createrepo python python-pip python-docutils xfig transfig
 
     # Required development packages.
     sudo zypper --non-interactive --plus-content debug install \
@@ -165,7 +165,7 @@ Ubuntu*)
     # Required utilties.
     sudo apt-get --yes install git alien fakeroot wget curl \
         lsscsi parted gdebi attr dbench watchdog \
-        python python-pip python-docutils
+        python python-pip python-docutils xfig transfig
 
     # Required development libraries
     sudo apt-get --yes install linux-headers-$(uname -r) \

@@ -1,4 +1,6 @@
 #!/bin/bash
+
+BASH_XTRACEFD=1
 set -x
 
 VERBOSE=0

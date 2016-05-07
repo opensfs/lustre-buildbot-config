@@ -9,7 +9,6 @@ else
    exit 0
 fi
 
-BASH_XTRACEFD=1
 set -x
 
 VERBOSE=0

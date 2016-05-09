@@ -3,7 +3,7 @@ set -x
 
 VERBOSE=0
 withzfs="--without-zfs"
-withldiskfs="--without-ldiskfs"
+withldiskfs="--disable-ldiskfs"
 MAKE_FLAGS=""
 
 message () {
@@ -25,7 +25,7 @@ while getopts vlzm: FLAG; do
         withzfs="--with-zfs"
         ;;
       l)
-        withldiskfs="--with-ldiskfs"
+        withldiskfs="--enable-ldiskfs"
         ;;
       m)
         MAKE_FLAGS="$OPTARG"

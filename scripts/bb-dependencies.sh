@@ -34,17 +34,18 @@ CentOS*)
     fi
 
     # Required development tools.
-    sudo yum -y install gcc make autoconf libtool 
+    sudo yum -y install gcc make autoconf libtool kernel-abi-whitelists
 
     # Development packages
     sudo yum -y --enablerepo=base-debuginfo install kernel-devel-$(uname -r) \
         kernel-debuginfo-$(uname -r) \
         zlib-devel libuuid-devel libblkid-devel libselinux-devel \
-        xfsprogs-devel libattr-devel libacl-devel
+        xfsprogs-devel libattr-devel libacl-devel keyutils-libs-devel
 
     # Required utilties.
     sudo yum -y install git rpm-build wget curl lsscsi parted attr dbench bc \
-        watchdog createrepo mock python python-docutils mdadm xfig transfig
+        watchdog createrepo mock python python-docutils mdadm xfig transfig \
+        keyutils keyutils-libs
 
     # add user to the mock group
     sudo usermod -a -G mock buildbot
@@ -62,12 +63,13 @@ Debian*)
     sudo apt-get --yes install linux-headers-$(uname -r) \
         kernel-debuginfo-$(uname -r) \
         zlib1g-dev uuid-dev libblkid-dev libselinux-dev \
-        xfslibs-dev libattr1-dev libacl1-dev
+        xfslibs-dev libattr1-dev libacl1-dev libkeyutils-dev
 
     # Required utilties.
     sudo apt-get --yes install git alien fakeroot wget curl bc \
         lsscsi parted gdebi attr dbench watchdog createrepo \
-        python python-pip python-docutils xfig transfig
+        python python-pip python-docutils xfig transfig \ 
+        keyutils libkeyutils1
     ;;
 
 Fedora*)
@@ -80,11 +82,12 @@ Fedora*)
     sudo dnf -y install kernel-devel-$(uname -r) 
         kernel-debuginfo-$(uname -r) \
         zlib-devel libuuid-devel libblkid-devel libselinux-devel \
-        xfsprogs-devel libattr-devel libacl-devel
+        xfsprogs-devel libattr-devel libacl-devel keyutils-libs-devel
 
     # Required utilties.
     sudo dnf -y install git rpm-build wget curl lsscsi parted attr dbench \
-        watchdog createrepo mock python python-pip python-docutils xfig transfig
+        watchdog createrepo mock python python-pip python-docutils xfig transfig \
+        keyutils keyutils-libs
 
     # add user to the mock group
     sudo usermod -a -G mock buildbot
@@ -104,18 +107,19 @@ RHEL*)
     fi
 
     # Required development tools.
-    sudo yum -y install gcc autoconf libtool
+    sudo yum -y install gcc autoconf libtool kernel-abi-whitelists
 
     # Development packages
     sudo yum -y $EXTRA_REPO --enablerepo=rhel-debuginfo install kernel-devel-$(uname -r) \
         kernel-debuginfo-$(uname -r) \
         zlib-devel libuuid-devel libblkid-devel libselinux-devel \
-        xfsprogs-devel libattr-devel libacl-devel
+        xfsprogs-devel libattr-devel libacl-devel keyutils-libs-devel
 
     # Required utilties.
     sudo yum -y $EXTRA_REPO install git rpm-build wget curl lsscsi \
         parted attr dbench bc watchdog createrepo mock python \
-        python-pip python-docutils mdadm xfig transfig
+        python-pip python-docutils mdadm xfig transfig \
+        keyutils keyutils-libs
 
     # add user to the mock group
     sudo usermod -a -G mock buildbot
@@ -130,13 +134,15 @@ SUSE*)
 
     # Required utilties.
     sudo zypper --non-interactive install git rpm-build wget curl \
-        lsscsi parted attr createrepo python python-pip python-docutils xfig transfig
+        lsscsi parted attr createrepo python python-pip python-docutils \
+        xfig transfig keyutils keyutils-libs
 
     # Required development packages.
     sudo zypper --non-interactive --plus-content debug install \
         kernel-devel kernel-default-debuginfo \
         zlib-devel libuuid-devel libblkid-devel libselinux-devel \
-        xfsprogs-devel libattr-devel libacl-devel kernel-source
+        xfsprogs-devel libattr-devel libacl-devel kernel-source \
+        keyutils-devel
     ;;
 
 OpenSUSE*)
@@ -148,13 +154,15 @@ OpenSUSE*)
 
     # Required utilties.
     sudo zypper --non-interactive install git rpm-build wget curl \
-        lsscsi parted attr createrepo python python-pip python-docutils xfig transfig
+        lsscsi parted attr createrepo python python-pip python-docutils \
+        xfig transfig keyutils keyutils-lib
 
     # Required development packages.
     sudo zypper --non-interactive --plus-content debug install \
         kernel-devel kernel-default-debuginfo \
         zlib-devel libuuid-devel libblkid-devel libselinux-devel \
-        xfsprogs-devel libattr-devel libacl-devel kernel-source
+        xfsprogs-devel libattr-devel libacl-devel kernel-source \
+        keyutils-devel
     ;;
 
 Ubuntu*)
@@ -165,13 +173,14 @@ Ubuntu*)
     # Required utilties.
     sudo apt-get --yes install git alien fakeroot wget curl \
         lsscsi parted gdebi attr dbench watchdog \
-        python python-pip python-docutils xfig transfig
+        python python-pip python-docutils xfig transfig \
+        keyutils libkeyutils1
 
     # Required development libraries
     sudo apt-get --yes install linux-headers-$(uname -r) \
         linux-image-$(uname -r) \
         zlib1g-dev uuid-dev libblkid-dev libselinux-dev \
-        xfslibs-dev libattr1-dev libacl1-dev
+        xfslibs-dev libattr1-dev libacl1-dev libkeyutils-dev
     ;;
 
 *)

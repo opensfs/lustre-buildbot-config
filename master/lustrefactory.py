@@ -3,8 +3,10 @@
 
 from buildbot.plugins import util
 from buildbot.steps.source.gerrit import Gerrit
-from buildbot.steps.source.git import Git
 from buildbot.steps.shell import ShellCommand
+from buildbot.steps.shell import Configure
+from buildbot.steps.shell import SetPropertyFromCommand 
+from buildbot.steps.transfer import FileUpload
 from buildbot.steps.trigger import Trigger
 from buildbot.status.results import SUCCESS 
 from buildbot.status.results import FAILURE 
@@ -23,6 +25,12 @@ def do_step_zfs(step):
 
 def do_step_installdeps(step):
     return do_step_build(step, 'installdeps')
+
+def hide_if_skipped(results, step):
+    return results == SKIPPED
+
+def hide_except_error(results, step):
+    return results in (SUCCESS, SKIPPED)
 
 @util.renderer
 def dependencyCommand(props):
@@ -72,7 +80,62 @@ def buildCommand(props):
 
     return args
 
-def getBuildFactory(gerrit_repo, **kwargs):
+def createTarballFactory(gerrit_repo):
+    """ Generates a build factory for a tarball generating builder.
+    Returns:
+        BuildFactory: Build factory with steps for generating tarballs.
+    """
+    bf = util.BuildFactory()
+
+    # Pull the patch from Gerrit
+    bf.addStep(Gerrit(
+        repourl=gerrit_repo,
+        workdir="build/lustre",
+        mode="full",
+        method="fresh",
+        retry=[60,60],
+        timeout=3600,
+        logEnviron=False,
+        getDescription=True,
+        haltOnFailure=True,
+        description=["cloning"],
+        descriptionDone=["cloned"]))
+
+    # make tarball
+    bf.addStep(ShellCommand(
+        command=['sh', './autogen.sh'],
+        description=["autogen"],
+        descriptionDone=["autogen"],
+        workdir="build/lustre"))
+
+    bf.addStep(Configure(
+        command=['./configure', '--enable-dist'],
+        workdir="build/lustre"))
+
+    bf.addStep(ShellCommand(
+        command=['make', 'dist'],
+        description=["making dist"],
+        descriptionDone=["make dist"],
+        workdir="build/lustre"))
+
+    # upload it to the master
+    bf.addStep(SetPropertyFromCommand(
+        command=['sh', '-c', 'echo *.tar.gz'],
+        property='tarball',
+        workdir="build/lustre",
+        hideStepIf=hide_except_error,
+        haltOnFailure=True))
+
+    bf.addStep(FileUpload(
+        workdir="build/lustre",
+        slavesrc=util.Interpolate("%(prop:tarball)s"),
+        masterdest=util.Interpolate("public_html/buildproducts/%(prop:event.change.number)s/%(prop:event.patchSet.number)s/%(prop:tarball)s"),
+        url=util.Interpolate("http://%(prop:bbmaster)s/buildproducts/%(prop:event.change.number)s/%(prop:event.patchSet.number)s/%(prop:tarball)s"),
+        urlText="tarball"))
+
+    return bf
+
+def createBuildFactory(gerrit_repo):
     """ Generates a build factory for a standard lustre builder.
     Args:
         gerrit_repo (string): Gerrit repo url
@@ -87,7 +150,7 @@ def getBuildFactory(gerrit_repo, **kwargs):
         decodeRC={0 : SUCCESS, 1 : FAILURE, 2 : WARNINGS, 3 : SKIPPED },
         haltOnFailure=True, logEnviron=False,
         doStepIf=do_step_installdeps,
-        hideStepIf=lambda results, s: results==SKIPPED,
+        hideStepIf=hide_if_skipped,
         description=["installing dependencies"],
         descriptionDone=["installed dependencies"]))
 
@@ -97,7 +160,7 @@ def getBuildFactory(gerrit_repo, **kwargs):
         decodeRC={0 : SUCCESS, 1 : FAILURE, 2 : WARNINGS, 3 : SKIPPED },
         haltOnFailure=True, logEnviron=False,
         doStepIf=do_step_zfs,
-        hideStepIf=lambda results, s: results==SKIPPED,
+        hideStepIf=hide_if_skipped,
         description=["building spl and zfs"],
         descriptionDone=["built spl and zfs"]))
 
@@ -113,7 +176,7 @@ def getBuildFactory(gerrit_repo, **kwargs):
         workdir="build/lustre",
         command=buildCommand,
         haltOnFailure=True, logEnviron=False,
-        hideStepIf=lambda results, s: results==SKIPPED,
+        hideStepIf=hide_if_skipped,
         lazylogfiles=True,
         decodeRC={0 : SUCCESS, 1 : FAILURE, 2 : WARNINGS, 3 : SKIPPED },
         description=["building lustre"], descriptionDone=["built lustre"]))

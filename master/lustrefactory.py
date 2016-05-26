@@ -130,8 +130,7 @@ def createTarballFactory(gerrit_repo):
         workdir="build/lustre",
         slavesrc=util.Interpolate("%(prop:tarball)s"),
         masterdest=util.Interpolate("public_html/buildproducts/%(prop:event.change.number)s/%(prop:event.patchSet.number)s/%(prop:tarball)s"),
-        url=util.Interpolate("http://%(prop:bbmaster)s/buildproducts/%(prop:event.change.number)s/%(prop:event.patchSet.number)s/%(prop:tarball)s"),
-        urlText="tarball"))
+        url=util.Interpolate("http://%(prop:bbmaster)s/buildproducts/%(prop:event.change.number)s/%(prop:event.patchSet.number)s/%(prop:tarball)s")))
 
     return bf
 

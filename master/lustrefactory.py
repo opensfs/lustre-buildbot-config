@@ -166,6 +166,7 @@ def createTarballFactory(gerrit_repo):
     # make tarball
     bf.addStep(ShellCommand(
         command=['sh', './autogen.sh'],
+        haltOnFailure=True,
         description=["autogen"],
         descriptionDone=["autogen"],
         workdir="build/lustre"))
@@ -176,6 +177,7 @@ def createTarballFactory(gerrit_repo):
 
     bf.addStep(ShellCommand(
         command=['make', 'dist'],
+        haltOnFailure=True,
         description=["making dist"],
         descriptionDone=["make dist"],
         workdir="build/lustre"))

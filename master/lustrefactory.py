@@ -21,9 +21,6 @@ def do_step_zfs(step):
 def do_step_installdeps(step):
     return do_step_if_value(step, 'installdeps', 'yes')
 
-def do_step_rpmbuild(step):
-    return do_step_if_value(step, 'buildstyle', 'srpm')
-
 def hide_if_skipped(results, step):
     return results == SKIPPED
 
@@ -70,8 +67,6 @@ def configureCmd(props):
             args.extend(["--enable-ldiskfs"])
         else:
             args.extend(["--disable-ldiskfs"])
-    elif style == "srpm":
-        args.extend(["--enable-dist"])
 
     return args
 
@@ -80,35 +75,12 @@ def makeCmd(props):
     args = ["sh", "-c"]
     style = props.getProperty('buildstyle')
 
-    if style == "srpm":
-        args.extend(["make -j$(nproc) srpm"])
-    elif style == "deb":
+    if style == "deb":
         args.extend(["make -j$(nproc) debs"])
     elif style == "rpm":
         args.extend(["make -j$(nproc) rpms"])
     else:
         args.extend(["make -j$(nproc)"])
-
-    return args
-
-@util.renderer
-def rpmbuildCmd(props):
-    args = ["sh", "-c"] 
-    style = props.getProperty('buildstyle')
-    zfsArg = "--without zfs"
-    ldiskfsArg = "--without ldiskfs"
-
-    if style == "srpm":
-        with_zfs = props.getProperty('withzfs')
-        if with_zfs and with_zfs == "yes":
-            zfsArg = "--with zfs"
-
-        with_ldiskfs = props.getProperty('withldiskfs')
-        if with_ldiskfs and with_ldiskfs == "yes":
-            ldiskfsArg = "--with ldiskfs"
-
-    cmd = "rpmbuild --rebuild %s %s lustre-*.src.rpm" % (zfsArg, ldiskfsArg)
-    args.extend([cmd])
 
     return args
 
@@ -238,17 +210,6 @@ def createPackageBuildFactory():
         lazylogfiles=True,
         description=["making lustre"],
         descriptionDone=["make lustre"]))
-
-    bf.addStep(ShellCommand(
-        workdir="build/lustre",
-        command=rpmbuildCmd,
-        haltOnFailure=True,
-        logEnviron=False,
-        doStepIf=do_step_rpmbuild,
-        hideStepIf=hide_if_skipped,
-        lazylogfiles=True,
-        description=["rpmbuilding lustre"],
-        descriptionDone=["rpmbuild lustre"]))
 
     # TODO: upload build products
     # Primary idea here is to upload the build products to buildbot's public html folder

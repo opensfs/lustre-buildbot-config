@@ -217,7 +217,7 @@ def createPackageBuildFactory():
 
     bf.addStep(ShellCommand(
         workdir="build",
-        command=["sh", "-c", "rm -rf *"],
+        command=["sh", "-c", "rm -rvf *"],
         haltOnFailure=True,
         logEnviron=False,
         lazylogfiles=True,

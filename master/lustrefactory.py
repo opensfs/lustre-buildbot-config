@@ -3,15 +3,10 @@
 
 from buildbot.plugins import util
 from buildbot.steps.source.gerrit import Gerrit
-from buildbot.steps.shell import ShellCommand
-from buildbot.steps.shell import Configure
-from buildbot.steps.shell import SetPropertyFromCommand 
+from buildbot.steps.shell import ShellCommand, Configure, SetPropertyFromCommand
 from buildbot.steps.transfer import FileUpload, FileDownload
 from buildbot.steps.trigger import Trigger
-from buildbot.status.results import SUCCESS 
-from buildbot.status.results import FAILURE 
-from buildbot.status.results import SKIPPED 
-from buildbot.status.results import WARNINGS
+from buildbot.status.results import SUCCESS, FAILURE, SKIPPED, WARNINGS 
 
 def do_step_if_value(step, name, value):
     props = step.build.getProperties()
@@ -25,9 +20,6 @@ def do_step_zfs(step):
 
 def do_step_installdeps(step):
     return do_step_if_value(step, 'installdeps', 'yes')
-
-def do_step_rpmbuild(step):
-    return do_step_if_value(step, 'buildstyle', 'srpm')
 
 def hide_if_skipped(results, step):
     return results == SKIPPED
@@ -75,8 +67,6 @@ def configureCmd(props):
             args.extend(["--enable-ldiskfs"])
         else:
             args.extend(["--disable-ldiskfs"])
-    elif style == "srpm":
-        args.extend(["--enable-dist"])
 
     return args
 
@@ -85,60 +75,12 @@ def makeCmd(props):
     args = ["sh", "-c"]
     style = props.getProperty('buildstyle')
 
-    if style == "srpm":
-        args.extend(["make -j$(nproc) srpm"])
-    elif style == "deb":
+    if style == "deb":
         args.extend(["make -j$(nproc) debs"])
     elif style == "rpm":
         args.extend(["make -j$(nproc) rpms"])
     else:
         args.extend(["make -j$(nproc)"])
-
-    return args
-
-@util.renderer
-def rpmbuildCmd(props):
-    args = ["sh", "-c"] 
-    style = props.getProperty('buildstyle')
-    zfsArg = "--without zfs"
-    ldiskfsArg = "--without ldiskfs"
-
-    if style == "srpm":
-        with_zfs = props.getProperty('withzfs')
-        if with_zfs and with_zfs == "yes":
-            zfsArg = "--with zfs"
-
-        with_ldiskfs = props.getProperty('withldiskfs')
-        if with_ldiskfs and with_ldiskfs == "yes":
-            ldiskfsArg = "--with ldiskfs"
-
-    cmd = "rpmbuild --rebuild %s %s lustre-*.src.rpm" % (zfsArg, ldiskfsArg)
-    args.extend([cmd])
-
-    return args
-
-@util.renderer
-def buildCommand(props):
-    args = ["runurl"]
-    bb_url = props.getProperty('bburl')
-
-    style = props.getProperty('buildstyle')
-    if  style == "srpm":
-        args.extend([bb_url + "bb-build-lustre-srpm.sh"])
-    elif style == "deb":
-        args.extend([bb_url + "bb-build-lustre-pkg.sh", "-m", "debs"])
-    elif style == "rpm":
-        args.extend([bb_url + "bb-build-lustre-pkg.sh", "-m", "rpms"])
-    else:
-        args.extend([bb_url + "bb-build-lustre-pkg.sh"])
-
-    with_zfs = props.getProperty('withzfs')
-    if with_zfs and with_zfs == "yes":
-        args.extend(["-z"])
-
-    with_ldiskfs = props.getProperty('withldiskfs')
-    if with_ldiskfs and with_ldiskfs == "yes":
-        args.extend(["-l"])
 
     return args
 
@@ -166,6 +108,7 @@ def createTarballFactory(gerrit_repo):
     # make tarball
     bf.addStep(ShellCommand(
         command=['sh', './autogen.sh'],
+        haltOnFailure=True,
         description=["autogen"],
         descriptionDone=["autogen"],
         workdir="build/lustre"))
@@ -176,6 +119,7 @@ def createTarballFactory(gerrit_repo):
 
     bf.addStep(ShellCommand(
         command=['make', 'dist'],
+        haltOnFailure=True,
         description=["making dist"],
         descriptionDone=["make dist"],
         workdir="build/lustre"))
@@ -205,7 +149,7 @@ def createTarballFactory(gerrit_repo):
 def createPackageBuildFactory():
     """ Generates a build factory for a lustre tarball builder.
     Returns:
-        BuildFactory: Build factory with steps for a lustre builder.
+        BuildFactory: Build factory with steps for a lustre tarball builder.
     """
     bf = util.BuildFactory()
 
@@ -218,15 +162,18 @@ def createPackageBuildFactory():
     bf.addStep(ShellCommand(
         workdir="build/lustre",
         command=["tar", "-xvzf", util.Interpolate("%(prop:tarball)s"), "--strip-components=1"],
-        haltOnFailure=True, logEnviron=False,
+        haltOnFailure=True,
+        logEnviron=False,
         lazylogfiles=True,
-        description=["extracting tarball"], descriptionDone=["extract tarball"]))
+        description=["extracting tarball"],
+        descriptionDone=["extract tarball"]))
 
     # update dependencies
     bf.addStep(ShellCommand(
         command=dependencyCommand,
         decodeRC={0 : SUCCESS, 1 : FAILURE, 2 : WARNINGS, 3 : SKIPPED },
-        haltOnFailure=True, logEnviron=False,
+        haltOnFailure=True,
+        logEnviron=False,
         doStepIf=do_step_installdeps,
         hideStepIf=hide_if_skipped,
         description=["installing dependencies"],
@@ -236,7 +183,8 @@ def createPackageBuildFactory():
     bf.addStep(ShellCommand(
         command=buildzfsCommand,
         decodeRC={0 : SUCCESS, 1 : FAILURE, 2 : WARNINGS, 3 : SKIPPED },
-        haltOnFailure=True, logEnviron=False,
+        haltOnFailure=True,
+        logEnviron=False,
         doStepIf=do_step_zfs,
         hideStepIf=hide_if_skipped,
         description=["building spl and zfs"],
@@ -246,27 +194,22 @@ def createPackageBuildFactory():
     bf.addStep(ShellCommand(
         workdir="build/lustre",
         command=configureCmd,
-        haltOnFailure=True, logEnviron=False,
+        haltOnFailure=True,
+        logEnviron=False,
         hideStepIf=hide_if_skipped,
         lazylogfiles=True,
-        description=["configuring lustre"], descriptionDone=["configure lustre"]))
+        description=["configuring lustre"],
+        descriptionDone=["configure lustre"]))
 
     bf.addStep(ShellCommand(
         workdir="build/lustre",
         command=makeCmd,
-        haltOnFailure=True, logEnviron=False,
+        haltOnFailure=True,
+        logEnviron=False,
         hideStepIf=hide_if_skipped,
         lazylogfiles=True,
-        description=["making lustre"], descriptionDone=["make lustre"]))
-
-    bf.addStep(ShellCommand(
-        workdir="build/lustre",
-        command=rpmbuildCmd,
-        haltOnFailure=True, logEnviron=False,
-        doStepIf=do_step_rpmbuild,
-        hideStepIf=hide_if_skipped,
-        lazylogfiles=True,
-        description=["rpmbuilding lustre"], descriptionDone=["rpmbuild lustre"]))
+        description=["making lustre"],
+        descriptionDone=["make lustre"]))
 
     # TODO: upload build products
     # Primary idea here is to upload the build products to buildbot's public html folder
@@ -274,8 +217,9 @@ def createPackageBuildFactory():
 
     bf.addStep(ShellCommand(
         workdir="build",
-        command=["sh", "-c", "rm -rf *"],
-        haltOnFailure=True, logEnviron=False,
+        command=["sh", "-c", "rm -rvf *"],
+        haltOnFailure=True,
+        logEnviron=False,
         lazylogfiles=True,
         alwaysRun=True,
         description=["cleaning up"],

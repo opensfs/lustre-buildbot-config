@@ -4,7 +4,7 @@
 from buildbot.plugins import util
 from buildbot.steps.source.gerrit import Gerrit
 from buildbot.steps.shell import ShellCommand, Configure, SetPropertyFromCommand
-from buildbot.steps.transfer import FileUpload, FileDownload
+from buildbot.steps.transfer import FileUpload, FileDownload, DirectoryUpload
 from buildbot.steps.trigger import Trigger
 from buildbot.status.results import SUCCESS, FAILURE, SKIPPED, WARNINGS 
 
@@ -20,6 +20,9 @@ def do_step_zfs(step):
 
 def do_step_installdeps(step):
     return do_step_if_value(step, 'installdeps', 'yes')
+
+def do_step_collectpacks(step):
+    return do_step_if_value(step, 'buildstyle', 'rpm') or do_step_if_value(step, 'buildstyle', 'deb')
 
 def hide_if_skipped(results, step):
     return results == SKIPPED
@@ -81,6 +84,20 @@ def makeCmd(props):
         args.extend(["make -j$(nproc) rpms"])
     else:
         args.extend(["make -j$(nproc)"])
+
+    return args
+
+@util.renderer
+def collectProductsCmd(props):
+    args = ["sh", "-c"]
+    style = props.getProperty('buildstyle')
+
+    if style == "deb":
+        args.extend(["mkdir ./deliverables && mv *.deb ./deliverables"])
+    elif style == "rpm":
+        args.extend(["mkdir ./deliverables && mv $(ls *.rpm | grep -v *.src.rpm) ./deliverables"])
+    else:
+        args = []
 
     return args
 
@@ -211,10 +228,27 @@ def createPackageBuildFactory():
         description=["making lustre"],
         descriptionDone=["make lustre"]))
 
-    # TODO: upload build products
-    # Primary idea here is to upload the build products to buildbot's public html folder
-    # what should go in there so far: tarball, srpm (maybe?), and build products (for the testers to download)
+    # Build Products
+    bf.addStep(ShellCommand(
+        workdir="build/lustre",
+        command=collectProductsCmd,
+        haltOnFailure=True,
+        logEnviron=False,
+        doStepIf=do_step_collectpacks,
+        hideStepIf=hide_if_skipped,
+        lazylogfiles=True,
+        description=["collect deliverables"],
+        descriptionDone=["collected deliverables"]))
 
+    bf.addStep(DirectoryUpload(
+        workdir="build/lustre",
+        doStepIf=do_step_collectpacks,
+        hideStepIf=hide_if_skipped,
+        slavesrc="deliverables",
+        masterdest=util.Interpolate("public_html/buildproducts/%(prop:event.change.number)s/%(prop:event.patchSet.number)s/%(prop:distro)s/%(prop:distrover)s/"),
+        url=util.Interpolate("http://%(prop:bbmaster)s/buildproducts/%(prop:event.change.number)s/%(prop:event.patchSet.number)s/%(prop:distro)s/%(prop:distrover)s/")))
+
+    # Cleanup
     bf.addStep(ShellCommand(
         workdir="build",
         command=["sh", "-c", "rm -rvf *"],

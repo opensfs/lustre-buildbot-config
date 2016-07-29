@@ -96,7 +96,7 @@ Amazon*)
 CentOS*)
     if cat /etc/redhat-release | grep -Eq "6."; then
         # The buildbot-slave package isn't available from a common repo.
-        BUILDSLAVE_URL="http://build.zfsonlinux.org"
+        BUILDSLAVE_URL="http://build.lustre.org"
         BUILDSLAVE_RPM="buildbot-slave-0.8.8-2.el6.noarch.rpm"
         yum -y install $BUILDSLAVE_URL/$BUILDSLAVE_RPM
         BUILDSLAVE="/usr/bin/buildslave"

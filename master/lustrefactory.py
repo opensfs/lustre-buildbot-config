@@ -24,6 +24,9 @@ def do_step_installdeps(step):
 def do_step_collectpacks(step):
     return do_step_if_value(step, 'buildstyle', 'rpm') or do_step_if_value(step, 'buildstyle', 'deb')
 
+def do_step_buildrepo(step):
+    return do_step_if_value(step, 'buildstyle', 'rpm')
+
 def hide_if_skipped(results, step):
     return results == SKIPPED
 
@@ -91,11 +94,34 @@ def makeCmd(props):
 def collectProductsCmd(props):
     args = ["sh", "-c"]
     style = props.getProperty('buildstyle')
+    arch = props.getProperty('arch')
 
     if style == "deb":
         args.extend(["mkdir ./deliverables && mv *.deb ./deliverables"])
     elif style == "rpm":
-        args.extend(["mkdir ./deliverables && mv $(ls *.rpm | grep -v *.src.rpm) ./deliverables"])
+        mvcmd = "mkdir -p ./deliverables/{SRPM,%s/kmod} && mv $(ls *.rpm | grep -v *.src.rpm) ./deliverables/%s/kmod && mv *.src.rpm ./deliverables/SRPM" % (arch, arch)
+        args.extend([mvcmd])
+    else:
+        args = []
+
+    return args
+
+@util.renderer
+def buildRepoCmd(props):
+    args = ["sh", "-c"]
+    style = props.getProperty('buildstyle')
+    arch = props.getProperty('arch')
+    change = props.getProperty('event.change.number')
+    patchset = props.getProperty('event.patchSet.number')
+    distro = props.getProperty('distro')
+    distrover = props.getProperty('distrover')
+    bb_url = props.getProperty('bbmaster')
+
+    if style == "deb":
+        args = []
+    elif style == "rpm":
+        repocmd = "createrepo SRPM && createrepo %s/kmod && printf \"[lustre-SRPM]\nname=lustre-SRPM\nbaseurl=http://%s/buildproducts/%s/%s/%s/%s/SRPM/\nenabled=1\ngpgcheck=0\n\n[lustre-RPM]\nname=lustre-RPM\nbaseurl=http://%s/buildproducts/%s/%s/%s/%s/%s/kmod/\nenabled=1\ngpgcheck=0\" > lustre.repo" % (arch, bb_url, change, patchset, distro, distrover, bb_url, change, patchset, distro, distrover, arch)
+        args.extend([repocmd])
     else:
         args = []
 
@@ -240,13 +266,26 @@ def createPackageBuildFactory():
         description=["collect deliverables"],
         descriptionDone=["collected deliverables"]))
 
+    # Build repo
+    bf.addStep(ShellCommand(
+        workdir="build/lustre/deliverables",
+        command=buildRepoCmd,
+        haltOnFailure=True,
+        logEnviron=False,
+        doStepIf=do_step_buildrepo,
+        hideStepIf=hide_if_skipped,
+        lazylogfiles=True,
+        description=["building repo"],
+        descriptionDone=["build repo"]))
+
+    # Upload repo to master
     bf.addStep(DirectoryUpload(
         workdir="build/lustre",
         doStepIf=do_step_collectpacks,
         hideStepIf=hide_if_skipped,
         slavesrc="deliverables",
-        masterdest=util.Interpolate("public_html/buildproducts/%(prop:event.change.number)s/%(prop:event.patchSet.number)s/%(prop:distro)s/%(prop:distrover)s/"),
-        url=util.Interpolate("http://%(prop:bbmaster)s/buildproducts/%(prop:event.change.number)s/%(prop:event.patchSet.number)s/%(prop:distro)s/%(prop:distrover)s/")))
+        masterdest=util.Interpolate("public_html/buildproducts/%(prop:event.change.number)s/%(prop:event.patchSet.number)s/%(prop:distro)s/%(prop:distrover)s"),
+        url=util.Interpolate("http://%(prop:bbmaster)s/buildproducts/%(prop:event.change.number)s/%(prop:event.patchSet.number)s/%(prop:distro)s/%(prop:distrover)s")))
 
     # Cleanup
     bf.addStep(ShellCommand(

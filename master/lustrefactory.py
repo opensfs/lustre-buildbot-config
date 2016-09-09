@@ -128,13 +128,13 @@ def getChangeDirectory(props):
 def getBaseUrl(props):
     # generate the base url for build products of a change
     bb_url = props.getProperty('bbmaster')
-    url = "http://%s/buildproducts/" % bb_url
+    url = "http://%s/downloads/" % bb_url
     url += getChangeDirectory(props)
     return url
 
 def getBaseMasterDest(props):
     # generate the base directory on the master for build products of a change
-    masterdest = "public_html/buildproducts/"
+    masterdest = "public_html/downloads/"
     masterdest += getChangeDirectory(props)
     return masterdest
 

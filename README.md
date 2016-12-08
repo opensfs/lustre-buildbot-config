@@ -5,7 +5,8 @@ Lustre Buildbot at http://build.lustre.org.  It's used to automate the process
 of testing patch sets submitted to Lustre project on 
 [Gerrit] (http://review.whamcloud.com).  If you would like to
 contribute to improving our testing infrastructure please open a pull request
-against this Github repository.
+against this Github repository. If you have any questions or feedback, feel
+free to contact us at <buildbot-admin@lustre.org>.
 
 ## Build and Test Strategy
 
@@ -14,7 +15,18 @@ against this Github repository.
 The Lustre project relies on Gerrit to track proposed changes.  Changes
 submitted to Gerrit are called patch sets. Each patch set submitted will 
 be automatically tested by the buildbot.  As you fix the code and push
-new changes to Gerrit, each patch set is queued to be tested.
+new changes to Gerrit, each patch set is queued to be built. Results of
+the build are submitted to Gerrit once a build completes. Build products
+(tarball, srpm, rpms) of a successful build will be available for
+two weeks.
+
+### Tags
+
+The Lustre project is periodically tagged. The Lustre git repository
+is polled every hour for new or modified tags. If a new/modified tag
+is found, a change is submitted to the build master and a full build
+is performed. Once a tag is successfully built, build products 
+(tarball, srpm, rpms) will be available indefinitely.
 
 ### Builder Types
 
@@ -89,6 +101,11 @@ contained within them:
 * `master/lustrefactory.py` - Contains core and supporting functions that 
   construct BuildFactories for Lustre Buildbot builders. If new types of
   build factories need to be created, please define them in this file.
+
+* `master/lustregittagpoller.py` - Contains a subclass of buildbot's
+  GitPoller class called LustreTagPoller. The class is designed to
+  poll a git repository for changes in tags. If a new or modified tag
+  is found, a change is then submitted to the build master. 
 
 ### Credentials
 

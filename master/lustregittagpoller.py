@@ -47,7 +47,7 @@ class LustreTagPoller(GitPoller):
     def _getRefs(self):
         """Collect and parse all local references"""
 
-        d = self._dovccmd('show-ref', [])
+        d = self._dovccmd('show-ref', [], path=self.workdir)
 
         @d.addCallback
         def parseRefs(rows):

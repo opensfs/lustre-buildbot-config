@@ -378,7 +378,7 @@ def createPackageBuildFactory():
     # Cleanup
     bf.addStep(ShellCommand(
         workdir="build",
-        command=["sh", "-c", "rm -rvf *"],
+        command=["sh", "-c", "rm -rvf ./* /tmp/rpmbuild-*"],
         haltOnFailure=True,
         logEnviron=False,
         lazylogfiles=True,

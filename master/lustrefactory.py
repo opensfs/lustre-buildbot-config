@@ -222,6 +222,17 @@ def createTarballFactory(gerrit_repo):
         value=buildCategory, 
         hideStepIf=hide_except_error))
 
+    # update dependencies
+    bf.addStep(ShellCommand(
+        command=dependencyCommand,
+        decodeRC={0 : SUCCESS, 1 : FAILURE, 2 : WARNINGS, 3 : SKIPPED },
+        haltOnFailure=True,
+        logEnviron=False,
+        doStepIf=do_step_installdeps,
+        hideStepIf=hide_if_skipped,
+        description=["installing dependencies"],
+        descriptionDone=["installed dependencies"]))
+
     # Pull the patch from Gerrit
     bf.addStep(Gerrit(
         repourl=gerrit_repo,

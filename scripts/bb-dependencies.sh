@@ -40,12 +40,13 @@ CentOS*)
     sudo yum -y --enablerepo=base-debuginfo install kernel-devel-$(uname -r) \
         kernel-debuginfo-$(uname -r) \
         zlib-devel libuuid-devel libblkid-devel libselinux-devel \
-        xfsprogs-devel libattr-devel libacl-devel keyutils-libs-devel
+        xfsprogs-devel libattr-devel libacl-devel keyutils-libs-devel \
+        libyaml-devel
 
     # Required utilties.
     sudo yum -y install git rpm-build wget curl lsscsi parted attr dbench bc \
         watchdog createrepo mock python python-docutils mdadm xfig transfig \
-        keyutils keyutils-libs
+        keyutils keyutils-libs libyaml
 
     # add user to the mock group
     sudo usermod -a -G mock buildbot
@@ -174,13 +175,14 @@ Ubuntu*)
     sudo apt-get --yes install git alien fakeroot wget curl \
         lsscsi parted gdebi attr dbench watchdog \
         python python-pip python-docutils xfig transfig \
-        keyutils libkeyutils1
+        keyutils libkeyutils1 libyaml-0-2
 
     # Required development libraries
     sudo apt-get --yes install linux-headers-$(uname -r) \
         linux-image-$(uname -r) \
         zlib1g-dev uuid-dev libblkid-dev libselinux-dev \
-        xfslibs-dev libattr1-dev libacl1-dev libkeyutils-dev
+        xfslibs-dev libattr1-dev libacl1-dev libkeyutils-dev \
+        libyaml-dev
     ;;
 
 *)

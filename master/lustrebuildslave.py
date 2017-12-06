@@ -87,7 +87,7 @@ runurl $BB_URL/bb-bootstrap.sh"""
                 identifier=ec2_default_access, secret_identifier=ec2_default_secret,
                 keypair_name=ec2_default_keypair_name, security_name='LustreBuilder',
                 user_data=None, region="us-west-1", placement="b", max_builds=1,
-                build_wait_timeout=60 * 30, spot_instance=True, max_spot_price=.08,
+                build_wait_timeout=60 * 1, spot_instance=True, max_spot_price=.08,
                 price_multiplier=None, **kwargs):
 
         self.name = name
